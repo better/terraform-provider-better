@@ -14,6 +14,18 @@ type Password struct {
 	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD"`
 }
 
+func Compact(d []string) []string {
+	r := make([]string, 0)
+
+	for _, v := range d {
+		if v != "" {
+			r = append(r, v)
+		}
+	}
+
+	return r
+}
+
 func getSession() *session.Session {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-east-1")},
