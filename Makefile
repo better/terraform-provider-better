@@ -24,9 +24,7 @@ ${target-dir}/${binary}: ${binary}
 tests/.terraform: tests/test.tf ${target-dir}/${binary}
 	cd tests && terraform init
 
-terraform-init: tests/.terraform
-
-terraform-%: terraform-init
+terraform-%: tests/.terraform
 	cd tests && terraform $*
 
 test: terraform-apply
