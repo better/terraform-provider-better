@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-func getId(secretId string, key string, rdsDbId string) string {
-	return fmt.Sprintf("%s-%s-%s", secretId, key, rdsDbId)
+func getId(secretId string, rdsDbId string) string {
+	return fmt.Sprintf("%s-%s", secretId, rdsDbId)
 }
 
 func resourceDatabasePasswordAssociation() *schema.Resource {
@@ -27,11 +27,6 @@ func resourceDatabasePasswordAssociation() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "id of secret",
-			},
-			"key": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "json key in secret to associate",
 			},
 			"rds_db_id": {
 				Type:        schema.TypeString,
@@ -49,7 +44,6 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	secretId := getSecretId(d)
-	key := d.Get("key").(string)
 	rdsDbId := d.Get("rds_db_id").(string)
 	session := getSession()
 	password := Password{}
@@ -69,7 +63,7 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 
 	mdbii := &rds.ModifyDBInstanceInput{
 		DBInstanceIdentifier: aws.String(rdsDbId),
-		MasterUserPassword:   aws.String(password.ProductionAdminPassword),
+		MasterUserPassword:   aws.String(password.AdminPassword),
 		ApplyImmediately:     aws.Bool(true),
 	}
 
@@ -77,7 +71,7 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 		return diag.FromErr(err)
 	}
 
-	d.SetId(getId(secretId, key, rdsDbId))
+	d.SetId(getId(secretId, rdsDbId))
 
 	return diags
 }
@@ -86,10 +80,9 @@ func resourceDatabasePasswordAssociationRead(ctx context.Context, d *schema.Reso
 	var diags diag.Diagnostics
 
 	secretId := getSecretId(d)
-	key := d.Get("key").(string)
 	rdsDbId := d.Get("rds_db_id").(string)
 
-	d.SetId(getId(secretId, key, rdsDbId))
+	d.SetId(getId(secretId, rdsDbId))
 
 	return diags
 }

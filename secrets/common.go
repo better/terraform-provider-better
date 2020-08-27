@@ -9,12 +9,9 @@ import (
 )
 
 type Password struct {
-	StagingAdminPassword           string `json:"STAGING_ADMIN_PASSWORD"`
-	StagingUserPassword            string `json:"STAGING_USER_PASSWORD"`
-	StagingReadOnlyUserPassword    string `json:"STAGING_READONLY_USER_PASSWORD"`
-	ProductionAdminPassword        string `json:"PRODUCTION_ADMIN_PASSWORD"`
-	ProductionUserPassword         string `json:"PRODUCTION_USER_PASSWORD"`
-	ProductionReadOnlyUserPassword string `json:"PRODUCTION_READONLY_USER_PASSWORD"`
+	AdminPassword        string `json:"ADMIN_PASSWORD"`
+	UserPassword         string `json:"USER_PASSWORD"`
+	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD"`
 }
 
 func getSession() *session.Session {

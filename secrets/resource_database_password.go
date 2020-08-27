@@ -35,12 +35,9 @@ func resourceDatabasePasswordCreate(ctx context.Context, d *schema.ResourceData,
 	secretsManager := secretsmanager.New(getSession())
 
 	secret := Password{
-		StagingAdminPassword:           generateRandomPassword(secretsManager),
-		StagingUserPassword:            generateRandomPassword(secretsManager),
-		StagingReadOnlyUserPassword:    generateRandomPassword(secretsManager),
-		ProductionAdminPassword:        generateRandomPassword(secretsManager),
-		ProductionUserPassword:         generateRandomPassword(secretsManager),
-		ProductionReadOnlyUserPassword: generateRandomPassword(secretsManager),
+		AdminPassword:        generateRandomPassword(secretsManager),
+		UserPassword:         generateRandomPassword(secretsManager),
+		ReadOnlyUserPassword: generateRandomPassword(secretsManager),
 	}
 
 	secretString, err := json.Marshal(secret)
