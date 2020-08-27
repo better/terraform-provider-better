@@ -26,8 +26,10 @@ tests/.terraform: tests/test.tf ${target-dir}/${binary}
 
 terraform-init: tests/.terraform
 
-test: terraform-init
-	cd tests && terraform plan
+terraform-%: terraform-init
+	cd tests && terraform $*
+
+test: terraform-apply
 
 clean:
-	-rm -rf ${binary} vendor ${target-dir}/${binary} tests/.terraform
+	-rm -rf ${binary} vendor ${target-dir}/${binary} tests/.terraform tests/terraform.tfstate*

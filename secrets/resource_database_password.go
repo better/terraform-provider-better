@@ -22,7 +22,9 @@ type Password struct {
 }
 
 func getSession() *session.Session {
-	sess, err := session.NewSession()
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-east-1")},
+	)
 
 	if err == nil {
 		return sess
@@ -56,6 +58,7 @@ func resourceDatabasePassword() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceDatabasePasswordCreate,
 		ReadContext:   resourceDatabasePasswordRead,
+		UpdateContext: resourceDatabasePasswordRead,
 		DeleteContext: resourceDatabasePasswordDelete,
 		Schema: map[string]*schema.Schema{
 			"secret_id": {
@@ -103,6 +106,10 @@ func resourceDatabasePasswordCreate(ctx context.Context, d *schema.ResourceData,
 		return diag.FromErr(err)
 	}
 
+	if err := d.Set("secret_id", secretId); err != nil {
+		return diag.FromErr(err)
+	}
+
 	d.SetId(secretId)
 
 	return diags
@@ -123,11 +130,11 @@ func resourceDatabasePasswordRead(ctx context.Context, d *schema.ResourceData, m
 		return diag.FromErr(err)
 	}
 
-	if err := d.Set("secret_id", gsvo.Name); err != nil {
+	if err := d.Set("secret_id", gsvo.ARN); err != nil {
 		return diag.FromErr(err)
 	}
 
-	d.SetId(*gsvo.Name)
+	d.SetId(*gsvo.ARN)
 
 	return diags
 }
