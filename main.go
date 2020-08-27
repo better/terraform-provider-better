@@ -3,13 +3,13 @@ package main
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"terraform-provider-secrets/database"
+	"terraform-provider-secrets/secrets"
 )
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
 		ProviderFunc: func() *schema.Provider {
-			return database.Provider()
+			return secrets.Provider()
 		},
 	})
 }

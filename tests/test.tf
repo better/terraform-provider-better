@@ -2,8 +2,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
-//provider "better-secrets" {}
+provider "secrets" {}
 
 resource "aws_secretsmanager_secret" "this" {
-  name_prefix = "bconnito-test-"
+  name_prefix = "tfp-secrets-test-"
 }

@@ -1,23 +1,33 @@
-app-name := better-secrets
-version := 0.0.1
+name := secrets
+binary := terraform-provider-${name}
+target-dir := ~/.terraform.d/plugins
+
+export GOOS ?= darwin
+export GOARCH ?= amd64
 
 define builder
-	docker run --rm -v $(shell pwd):/app -w /app golang:alpine $(1)
+	docker run --rm -v $(shell pwd):/app -e GOOS -e GOARCH -w /app golang:alpine $(1)
 endef
 
 go.sum: go.mod
-	$(call builder,go mod vendor)
 
 vendor: go.sum
+	$(call builder,go mod vendor)
 
-${app-name}: database vendor
-	$(call builder,go build -o ${app-name})
+${binary}: secrets vendor
+	$(call builder,go build -o ${binary})
 
-test: dir ?= ~/.terraform.d/plugins/${app-name}/${version}
-test: ${app-name}
-	mkdir -p ${dir}
-	mv ${app-name} ${dir}/darwin_amd64
-	cd tests && terraform init && terraform plan
+${target-dir}/${binary}: ${binary}
+	mkdir -p ${target-dir}
+	cp ${binary} ${target-dir}
+
+tests/.terraform: tests/test.tf ${target-dir}/${binary}
+	cd tests && terraform init
+
+terraform-init: tests/.terraform
+
+test: terraform-init
+	cd tests && terraform plan
 
 clean:
-	-rm -rf ${app-name} vendor ~/.terraform.d/plugins/${app-name} tests/.terraform
+	-rm -rf ${binary} vendor ${target-dir}/${binary} tests/.terraform
