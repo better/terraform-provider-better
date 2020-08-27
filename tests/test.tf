@@ -37,6 +37,5 @@ resource "aws_db_instance" "this" {
 
 resource "secrets_database_password_association" "this" {
   secret_id = secrets_database_password.this.secret_id
-  key = "PRODUCTION_ADMIN_PASSWORD"
   rds_db_id = aws_db_instance.this.id
 }
