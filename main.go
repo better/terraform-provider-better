@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/better/terraform-provider-secrets/secrets"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"terraform-provider-secrets/secrets"
 )
 
 func main() {
