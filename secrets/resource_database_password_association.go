@@ -68,11 +68,14 @@ func updateSdm(id string, password string) (bool, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		if resource, err := client.Resources().Get(ctx, id); err != nil {
+		if r, err := client.Resources().Get(ctx, id); err != nil {
 			return err == nil, err
 		} else {
-			postgres := resource.Resource
-			_, err := client.Resources().Update(ctx, postgres)
+			var resource interface{} = r.Resource
+			postgres := resource.(sdm.Postgres)
+			postgres.Password = password
+
+			_, err := client.Resources().Update(ctx, &postgres)
 
 			return err == nil, err
 		}
