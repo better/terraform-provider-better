@@ -4,8 +4,15 @@ provider "aws" {
 
 provider "better" {}
 
+locals {
+  prefix = "tfp-better-test-"
+  username = "test"
+  password = "fake_fake_fake"
+  engine = "postgres"
+}
+
 resource "aws_secretsmanager_secret" "this" {
-  name_prefix = "tfp-secrets-test-"
+  name_prefix = local.prefix
   recovery_window_in_days = 0
 }
 
@@ -14,19 +21,16 @@ resource "better_database_password" "this" {
 }
 
 resource "aws_db_instance" "this" {
-  instance_class = "db.t3.micro"
+  identifier_prefix = local.prefix
 
-  engine = "mysql"
-  engine_version = "5.7"
-  storage_type = "gp2"
-  allocated_storage = 10
-  name = "test"
-  parameter_group_name = "default.mysql5.7"
+  instance_class = "db.t3.micro"
+  engine = local.engine
+  allocated_storage = 5
   publicly_accessible = false
   skip_final_snapshot = true
 
-  username = "test"
-  password = "fake_fake_fake"
+  username = local.username
+  password = local.password
 
   apply_immediately = true
 
@@ -35,7 +39,22 @@ resource "aws_db_instance" "this" {
   }
 }
 
+resource "sdm_resource" "this" {
+  postgres {
+    name = "${local.prefix}${local.username}"
+
+    hostname = aws_db_instance.this.address
+    port = aws_db_instance.this.port
+
+    username = local.username
+    password = local.password
+
+    database = local.engine
+  }
+}
+
 resource "better_database_password_association" "this" {
   secret_id = better_database_password.this.secret_id
-  rds_db_id = aws_db_instance.this.id
+  db_id = aws_db_instance.this.id
+  sdm_id = sdm_resource.this.id
 }

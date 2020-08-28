@@ -18,8 +18,8 @@ import (
 func getId(d *schema.ResourceData) string {
 	ids := []string{
 		getSecretId(d),
-		d.Get("rds_db_id").(string),
-		d.Get("sdm_resource_id").(string),
+		d.Get("db_id").(string),
+		d.Get("sdm_id").(string),
 	}
 
 	return strings.Join(Compact(ids), "-")
@@ -54,7 +54,7 @@ func updateRds(id string, password string, session *session.Session) (bool, erro
 	return err == nil, err
 }
 
-func updateSdm(id string, password string) (bool, error) {
+func updateSdm(id string, password string, ctx context.Context) (bool, error) {
 	accessKey := os.Getenv("SDM_API_ACCESS_KEY")
 	secretKey := os.Getenv("SDM_API_SECRET_KEY")
 
@@ -65,17 +65,13 @@ func updateSdm(id string, password string) (bool, error) {
 	if client, err := sdm.New(accessKey, secretKey); err != nil {
 		return err == nil, err
 	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
 		if r, err := client.Resources().Get(ctx, id); err != nil {
 			return err == nil, err
 		} else {
-			var resource interface{} = r.Resource
-			postgres := resource.(sdm.Postgres)
+			postgres := r.Resource.(*sdm.Postgres)
 			postgres.Password = password
 
-			_, err := client.Resources().Update(ctx, &postgres)
+			_, err := client.Resources().Update(ctx, postgres)
 
 			return err == nil, err
 		}
@@ -94,13 +90,13 @@ func resourceDatabasePasswordAssociation() *schema.Resource {
 				Required:    true,
 				Description: "id of secret",
 			},
-			"rds_db_id": {
+			"db_id": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
 				Description: "id of rds instance",
 			},
-			"sdm_resource_id": {
+			"sdm_id": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
@@ -117,21 +113,21 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	secretId := getSecretId(d)
-	rdsDbId := d.Get("rds_db_id").(string)
-	sdmResourceId := d.Get("sdm_resource_id").(string)
+	dbId := d.Get("db_id").(string)
+	sdmId := d.Get("sdm_id").(string)
 	session := getSession()
 
 	if password, err := getPassword(secretId, session); err != nil {
 		return diag.FromErr(err)
 	} else {
-		if rdsDbId != "" {
-			if _, err := updateRds(rdsDbId, password.AdminPassword, session); err != nil {
+		if dbId != "" {
+			if _, err := updateRds(dbId, password.AdminPassword, session); err != nil {
 				return diag.FromErr(err)
 			}
 		}
 
-		if sdmResourceId != "" {
-			if _, err := updateSdm(sdmResourceId, password.AdminPassword); err != nil {
+		if sdmId != "" {
+			if _, err := updateSdm(sdmId, password.AdminPassword, ctx); err != nil {
 				return diag.FromErr(err)
 			}
 		}
