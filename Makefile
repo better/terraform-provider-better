@@ -1,8 +1,8 @@
 name := better
 dir := .terraform.d
-binary := ${dir}/terraform-provider-${name}
+binary := ${dir}/plugins/terraform-provider-${name}
 
-export GOOS ?= darwin
+export GOOS ?= linux
 export GOARCH ?= amd64
 
 define builder
@@ -10,7 +10,13 @@ define builder
 endef
 
 define terraform
-	docker run --rm -it -v $(shell pwd):/app -v $(shell pwd)/${dir}:/root/${dir} -w /app/tests hashicorp/terraform:0.12.29 $(1)
+	docker run --rm -it \
+		-v $(shell pwd):/app \
+		-v $(shell pwd)/${dir}:/root/${dir} \
+		-e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+		-e AWS_SESSION_TOKEN \
+		-e AWS_SECURITY_TOKEN \
+		-w /app/tests hashicorp/terraform:0.12.29 $(1)
 endef
 
 go.sum: go.mod
