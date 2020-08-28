@@ -18,6 +18,7 @@ import (
 func getId(d *schema.ResourceData) string {
 	ids := []string{
 		getSecretId(d),
+		d.Get("key").(string),
 		d.Get("db_id").(string),
 		d.Get("sdm_id").(string),
 	}
@@ -90,6 +91,12 @@ func resourceDatabasePasswordAssociation() *schema.Resource {
 				Required:    true,
 				Description: "id of secret",
 			},
+			"key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "READONLY_USER_PASSWORD",
+				Description: "json key for password to use",
+			},
 			"db_id": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -113,21 +120,24 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	secretId := getSecretId(d)
+	key := d.Get("key").(string)
 	dbId := d.Get("db_id").(string)
 	sdmId := d.Get("sdm_id").(string)
 	session := getSession()
 
-	if password, err := getPassword(secretId, session); err != nil {
+	if p, err := getPassword(secretId, session); err != nil {
 		return diag.FromErr(err)
 	} else {
+		password := p.Get(key)
+
 		if dbId != "" {
-			if _, err := updateRds(dbId, password.AdminPassword, session); err != nil {
+			if _, err := updateRds(dbId, password, session); err != nil {
 				return diag.FromErr(err)
 			}
 		}
 
 		if sdmId != "" {
-			if _, err := updateSdm(sdmId, password.AdminPassword, ctx); err != nil {
+			if _, err := updateSdm(sdmId, password, ctx); err != nil {
 				return diag.FromErr(err)
 			}
 		}

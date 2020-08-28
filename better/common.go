@@ -14,6 +14,19 @@ type Password struct {
 	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD"`
 }
 
+func (p *Password) Get(key string) string {
+	switch key {
+	case "ADMIN_PASSWORD":
+		return p.AdminPassword
+	case "USER_PASSWORD":
+		return p.UserPassword
+	case "READONLY_USER_PASSWORD":
+		return p.ReadOnlyUserPassword
+	}
+
+	return p.ReadOnlyUserPassword
+}
+
 func Compact(d []string) []string {
 	r := make([]string, 0)
 

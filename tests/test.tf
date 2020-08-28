@@ -55,6 +55,7 @@ resource "sdm_resource" "this" {
 
 resource "better_database_password_association" "this" {
   secret_id = better_database_password.this.secret_id
+  key = "ADMIN_PASSWORD"
   db_id = aws_db_instance.this.id
   sdm_id = sdm_resource.this.id
 }
