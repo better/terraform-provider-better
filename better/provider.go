@@ -1,4 +1,4 @@
-package secrets
+package better
 
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -7,8 +7,8 @@ import (
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"secrets_database_password":             resourceDatabasePassword(),
-			"secrets_database_password_association": resourceDatabasePasswordAssociation(),
+			"better_database_password":             resourceDatabasePassword(),
+			"better_database_password_association": resourceDatabasePasswordAssociation(),
 		},
 	}
 }

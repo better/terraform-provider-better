@@ -1,4 +1,4 @@
-module github.com/better/terraform-provider-secrets
+module github.com/better/terraform-provider-better
 
 go 1.14
 

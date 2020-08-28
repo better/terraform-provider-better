@@ -1,5 +1,4 @@
 .idea/
 vendor/
-terraform-provider-secrets
 .terraform*
 terraform.tfstate*

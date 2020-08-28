@@ -1,4 +1,4 @@
-package secrets
+package better
 
 import (
 	"context"

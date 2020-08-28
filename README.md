@@ -1,3 +1,3 @@
-# terraform-provider-secrets
+# terraform-provider-better
 
-terraform provider for making secrets that arent stored in terraform state
+terraform provider for better resources
