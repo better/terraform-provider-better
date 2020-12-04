@@ -85,6 +85,9 @@ func resourceDatabasePasswordAssociation() *schema.Resource {
 		ReadContext:   resourceDatabasePasswordAssociationRead,
 		UpdateContext: resourceDatabasePasswordAssociationRead,
 		DeleteContext: resourceDatabasePasswordAssociationDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 		Schema: map[string]*schema.Schema{
 			"secret_id": {
 				Type:        schema.TypeString,

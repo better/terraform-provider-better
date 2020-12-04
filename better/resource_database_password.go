@@ -16,6 +16,9 @@ func resourceDatabasePassword() *schema.Resource {
 		ReadContext:   resourceDatabasePasswordRead,
 		UpdateContext: resourceDatabasePasswordRead,
 		DeleteContext: resourceDatabasePasswordDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 		Schema: map[string]*schema.Schema{
 			"secret_id": {
 				Type:        schema.TypeString,

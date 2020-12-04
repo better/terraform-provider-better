@@ -1,18 +1,21 @@
-name := better
-dir := .terraform.d
-plugins-dir := ${dir}/plugins
-binary := ${plugins-dir}/terraform-provider-${name}
-build-image := golang:alpine
-
 export GOOS ?= linux
 export GOARCH ?= amd64
+
+name := better
+version := 1.0.0
+build-image := golang:alpine
+plugins-dir := .terraform.d/plugins
+dir := ${plugins-dir}/terraform.better.com
+binary := ${dir}/better/${name}/${version}/${GOOS}_${GOARCH}/terraform-provider-${name}_v${version}
+sdm-binary := ${dir}/strongdm/sdm/1/${GOOS}_${GOARCH}/terraform-provider-sdm_v1
 
 define builder
 	docker run --rm -v $(shell pwd):/app -e GOOS -e GOARCH -w /app ${build-image} $(1)
 endef
 
 define get-provider
-	docker run --rm -e GOOS -e GOARCH -e GO111MODULE=on -v $(shell pwd)/${plugins-dir}:/go/bin ${build-image} sh -c "apk add --no-cache git && go get $(1)"
+	docker run --rm -e GOOS -e GOARCH -e GO111MODULE=on -v $(shell pwd)/${plugins-dir}:/go/bin ${build-image} sh -c "apk add --no-cache git && go get github.com/$(1)/terraform-provider-$(2)" && \
+	mkdir -p ${dir}/$(1)/$(2)/$(3)/${GOOS}_${GOARCH} && mv ${plugins-dir}/terraform-provider-$(2) ${dir}/$(1)/$(2)/$(3)/${GOOS}_${GOARCH}/terraform-provider-$(2)_v$(3)
 endef
 
 define terraform
@@ -24,7 +27,7 @@ define terraform
 		-e AWS_SECURITY_TOKEN \
 		-e SDM_API_ACCESS_KEY=$(shell $(call secret,SDM_API_ACCESS_KEY)) \
 		-e SDM_API_SECRET_KEY=$(shell $(call secret,SDM_API_SECRET_KEY)) \
-		-w /app/tests hashicorp/terraform:0.12.29 $(1)
+		-w /app/tests hashicorp/terraform:0.13.5 $(1)
 endef
 
 define secret
@@ -36,13 +39,16 @@ go.sum: go.mod
 vendor: go.sum
 	$(call builder,go mod vendor)
 
-${plugins-dir}:
-	$(call get-provider,github.com/strongdm/terraform-provider-sdm)
-
 ${binary}: ${name} vendor
 	$(call builder,go build -o ${binary})
 
-tests/.terraform: tests/test.tf ${plugins-dir} ${binary}
+${sdm-binary}:
+	$(call get-provider,strongdm,sdm,1)
+
+build: ${binary}
+plugins: ${sdm-binary}
+
+tests/.terraform: tests/test.tf plugins build
 	$(call terraform,init)
 
 terraform-%: tests/.terraform

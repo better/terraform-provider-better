@@ -1,8 +1,24 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+
+    sdm = {
+      source = "terraform.better.com/strongdm/sdm"
+    }
+
+    better = {
+      source = "terraform.better.com/better/better"
+    }
+  }
+
+  required_version = "~> 0.13.1"
+}
+
 provider "aws" {
   region = "us-east-1"
 }
-
-provider "better" {}
 
 locals {
   prefix = "tfp-better-test-"
