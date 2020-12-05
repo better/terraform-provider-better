@@ -2,7 +2,7 @@ export GOOS ?= linux
 export GOARCH ?= amd64
 
 name := better
-version := 1.0.0
+version := 1.1.1
 build-image := golang:alpine
 plugins-dir := .terraform.d/plugins
 dir := ${plugins-dir}/terraform.better.com
