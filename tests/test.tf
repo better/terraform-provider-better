@@ -130,25 +130,24 @@ resource "sdm_resource" "mq" {
 
 resource "better_mq_password" "mq" {
   secret_id = aws_secretsmanager_secret.mq.id
-  mq_id     = aws_mq_broker.mq.id
 }
 
 resource "better_mq_password_association" "mq_admin" {
   secret_id = better_mq_password.mq.secret_id
-  mq_id     = aws_mq_broker.mq.id
 
-  key                    = "ADMIN_PASSWORD"
-  mq_user                = "admin"
-  mq_user_console_access = true
-
+  mq_id  = aws_mq_broker.mq.id
   sdm_id = sdm_resource.mq.id
-}
 
-resource "better_mq_password_association" "mq_service" {
-  secret_id = better_mq_password.mq.secret_id
-  mq_id     = aws_mq_broker.mq.id
-
-  key                    = "USER_PASSWORD"
-  mq_user                = local.username
-  mq_user_console_access = false
+  mq_users = [
+    {
+      user           = "admin"
+      key            = "ADMIN_PASSWORD"
+      console_access = true
+    },
+    {
+      user           = local.username
+      key            = "USER_PASSWORD"
+      console_access = false
+    }
+  ]
 }

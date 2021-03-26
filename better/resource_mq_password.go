@@ -25,7 +25,7 @@ func resourceMqPassword() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "id of secret",
-			}
+			},
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Default: schema.DefaultTimeout(60 * time.Second),
@@ -35,6 +35,8 @@ func resourceMqPassword() *schema.Resource {
 
 func resourceMqPasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+
+	secretsManager := secretsmanager.New(getSession())
 
 	secret := Password{
 		AdminPassword: generateRandomPassword(secretsManager),
