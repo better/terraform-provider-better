@@ -25,12 +25,7 @@ func resourceMqPassword() *schema.Resource {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "id of secret",
-			},
-			"mq_id": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "id of MQ broker",
-			},
+			}
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Default: schema.DefaultTimeout(60 * time.Second),
@@ -41,14 +36,9 @@ func resourceMqPassword() *schema.Resource {
 func resourceMqPasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	mqId := d.Get("mq_id").(string)
-
-	secretsManager := secretsmanager.New(getSession())
-
 	secret := Password{
 		AdminPassword: generateRandomPassword(secretsManager),
 		UserPassword:  generateRandomPassword(secretsManager),
-		BrokerId:      mqId,
 	}
 
 	secretString, err := json.Marshal(secret)

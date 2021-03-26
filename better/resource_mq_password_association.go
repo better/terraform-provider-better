@@ -39,6 +39,16 @@ func updateMq(id string, user string, password string, consoleAccess bool, sessi
 	return err == nil, err
 }
 
+func rebootMq(id string, session *session.Session) (bool, error) {
+	mqClient := mq.New(session)
+
+	_, err := mqClient.RebootBroker(&mq.RebootBrokerInput{
+		BrokerId: aws.String(id),
+	})
+
+	return err == nil, err
+}
+
 func updateSdmMq(id string, user string, password string, ctx context.Context) (bool, error) {
 	accessKey := os.Getenv("SDM_API_ACCESS_KEY")
 	secretKey := os.Getenv("SDM_API_SECRET_KEY")
@@ -134,6 +144,10 @@ func resourceMqPasswordAssociationCreate(ctx context.Context, d *schema.Resource
 
 		if mqId != "" && mqUser != "" {
 			if _, err := updateMq(mqId, mqUser, password, mqUserConsoleAccess, session); err != nil {
+				return diag.FromErr(err)
+			}
+
+			if _, err := rebootMq(mqId, session); err != nil {
 				return diag.FromErr(err)
 			}
 		}

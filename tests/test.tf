@@ -34,54 +34,54 @@ locals {
 }
 
 # # Database
-# resource "aws_secretsmanager_secret" "db" {
-#   name_prefix             = local.prefix
-#   recovery_window_in_days = 0
-# }
+resource "aws_secretsmanager_secret" "db" {
+  name_prefix             = local.prefix
+  recovery_window_in_days = 0
+}
 
-# resource "better_database_password" "db" {
-#   secret_id = aws_secretsmanager_secret.db.id
-# }
+resource "better_database_password" "db" {
+  secret_id = aws_secretsmanager_secret.db.id
+}
 
-# resource "aws_db_instance" "db" {
-#   identifier_prefix = local.prefix
+resource "aws_db_instance" "db" {
+  identifier_prefix = local.prefix
 
-#   instance_class      = "db.t3.micro"
-#   engine              = local.engine
-#   allocated_storage   = 5
-#   publicly_accessible = false
-#   skip_final_snapshot = true
+  instance_class      = "db.t3.micro"
+  engine              = local.engine
+  allocated_storage   = 5
+  publicly_accessible = false
+  skip_final_snapshot = true
 
-#   username = local.username
-#   password = local.password
+  username = local.username
+  password = local.password
 
-#   apply_immediately = true
+  apply_immediately = true
 
-#   lifecycle {
-#     ignore_changes = [password]
-#   }
-# }
+  lifecycle {
+    ignore_changes = [password]
+  }
+}
 
-# resource "sdm_resource" "db" {
-#   postgres {
-#     name = "${local.prefix}${local.username}"
+resource "sdm_resource" "db" {
+  postgres {
+    name = "${local.prefix}${local.username}"
 
-#     hostname = aws_db_instance.db.address
-#     port     = aws_db_instance.db.port
+    hostname = aws_db_instance.db.address
+    port     = aws_db_instance.db.port
 
-#     username = local.username
-#     password = local.password
+    username = local.username
+    password = local.password
 
-#     database = local.engine
-#   }
-# }
+    database = local.engine
+  }
+}
 
-# resource "better_database_password_association" "db" {
-#   secret_id = better_database_password.db.secret_id
-#   key       = "ADMIN_PASSWORD"
-#   db_id     = aws_db_instance.db.id
-#   sdm_id    = sdm_resource.db.id
-# }
+resource "better_database_password_association" "db" {
+  secret_id = better_database_password.db.secret_id
+  key       = "ADMIN_PASSWORD"
+  db_id     = aws_db_instance.db.id
+  sdm_id    = sdm_resource.db.id
+}
 
 # MQ
 resource "aws_secretsmanager_secret" "mq" {
