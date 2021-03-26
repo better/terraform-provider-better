@@ -14,7 +14,6 @@ type Password struct {
 	AdminPassword        string `json:"ADMIN_PASSWORD"`
 	UserPassword         string `json:"USER_PASSWORD"`
 	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD,omitempty"`
-	BrokerId             string `json:"BROKER_ID,omitempty"`
 }
 
 func (p *Password) Get(key string) string {
@@ -25,8 +24,6 @@ func (p *Password) Get(key string) string {
 		return p.UserPassword
 	case "READONLY_USER_PASSWORD":
 		return p.ReadOnlyUserPassword
-	case "BROKER_ID":
-		return p.BrokerId
 	}
 
 	return p.ReadOnlyUserPassword

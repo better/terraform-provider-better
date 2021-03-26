@@ -198,7 +198,8 @@ func resourceMqPasswordAssociationCreate(ctx context.Context, d *schema.Resource
 					return diag.FromErr(err)
 				}
 
-				if sdmId != "" && consoleAccess {
+				// Only update SDM for the admin user
+				if sdmId != "" && user == "admin" && consoleAccess {
 					if _, err := updateSdmMq(sdmId, user, password, ctx); err != nil {
 						return diag.FromErr(err)
 					}
