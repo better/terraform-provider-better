@@ -13,7 +13,7 @@ terraform {
     }
   }
 
-  required_version = "~> 0.13.1"
+  required_version = "~> 0.14.5"
 }
 
 provider "aws" {
@@ -21,57 +21,134 @@ provider "aws" {
 }
 
 locals {
-  prefix = "tfp-better-test-"
+  prefix   = "tfp-better-test-"
   username = "test"
   password = "fake_fake_fake"
+
   engine = "postgres"
+
+  engine_type        = "ActiveMQ"
+  engine_version     = "5.15.14"
+  host_instance_type = "mq.t3.micro"
+  broker_name        = "test-mq"
 }
 
-resource "aws_secretsmanager_secret" "this" {
-  name_prefix = local.prefix
+# # Database
+# resource "aws_secretsmanager_secret" "db" {
+#   name_prefix             = local.prefix
+#   recovery_window_in_days = 0
+# }
+
+# resource "better_database_password" "db" {
+#   secret_id = aws_secretsmanager_secret.db.id
+# }
+
+# resource "aws_db_instance" "db" {
+#   identifier_prefix = local.prefix
+
+#   instance_class      = "db.t3.micro"
+#   engine              = local.engine
+#   allocated_storage   = 5
+#   publicly_accessible = false
+#   skip_final_snapshot = true
+
+#   username = local.username
+#   password = local.password
+
+#   apply_immediately = true
+
+#   lifecycle {
+#     ignore_changes = [password]
+#   }
+# }
+
+# resource "sdm_resource" "db" {
+#   postgres {
+#     name = "${local.prefix}${local.username}"
+
+#     hostname = aws_db_instance.db.address
+#     port     = aws_db_instance.db.port
+
+#     username = local.username
+#     password = local.password
+
+#     database = local.engine
+#   }
+# }
+
+# resource "better_database_password_association" "db" {
+#   secret_id = better_database_password.db.secret_id
+#   key       = "ADMIN_PASSWORD"
+#   db_id     = aws_db_instance.db.id
+#   sdm_id    = sdm_resource.db.id
+# }
+
+# MQ
+resource "aws_secretsmanager_secret" "mq" {
+  name_prefix             = local.prefix
   recovery_window_in_days = 0
 }
 
-resource "better_database_password" "this" {
-  secret_id = aws_secretsmanager_secret.this.id
-}
+resource "aws_mq_broker" "mq" {
 
-resource "aws_db_instance" "this" {
-  identifier_prefix = local.prefix
+  broker_name = local.broker_name
 
-  instance_class = "db.t3.micro"
-  engine = local.engine
-  allocated_storage = 5
-  publicly_accessible = false
-  skip_final_snapshot = true
+  engine_type    = local.engine_type
+  engine_version = local.engine_version
 
-  username = local.username
-  password = local.password
+  security_groups = ["sg-1d60117b"]
 
-  apply_immediately = true
+  host_instance_type = "mq.t3.micro"
 
-  lifecycle {
-    ignore_changes = [password]
+  user {
+    username       = "admin"
+    password       = local.password
+    console_access = true
+  }
+
+  user {
+    username       = local.username
+    password       = local.password
+    console_access = false
   }
 }
 
-resource "sdm_resource" "this" {
-  postgres {
-    name = "${local.prefix}${local.username}"
+resource "sdm_resource" "mq" {
+  http_basic_auth {
+    name = "MQ-${local.prefix}Admin Console"
 
-    hostname = aws_db_instance.this.address
-    port = aws_db_instance.this.port
+    url = aws_mq_broker.mq.instances.0.console_url
 
-    username = local.username
+    username = "admin"
     password = local.password
 
-    database = local.engine
+    default_path     = "/admin"
+    healthcheck_path = "/"
+    subdomain        = "mq-${local.prefix}test"
   }
 }
 
-resource "better_database_password_association" "this" {
-  secret_id = better_database_password.this.secret_id
-  key = "ADMIN_PASSWORD"
-  db_id = aws_db_instance.this.id
-  sdm_id = sdm_resource.this.id
+resource "better_mq_password" "mq" {
+  secret_id = aws_secretsmanager_secret.mq.id
+  mq_id     = aws_mq_broker.mq.id
+}
+
+resource "better_mq_password_association" "mq_admin" {
+  secret_id = better_mq_password.mq.secret_id
+  mq_id     = aws_mq_broker.mq.id
+
+  key                    = "ADMIN_PASSWORD"
+  mq_user                = "admin"
+  mq_user_console_access = true
+
+  sdm_id = sdm_resource.mq.id
+}
+
+resource "better_mq_password_association" "mq_service" {
+  secret_id = better_mq_password.mq.secret_id
+  mq_id     = aws_mq_broker.mq.id
+
+  key                    = "USER_PASSWORD"
+  mq_user                = local.username
+  mq_user_console_access = false
 }

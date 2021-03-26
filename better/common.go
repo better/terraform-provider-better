@@ -1,7 +1,9 @@
 package better
 
 import (
+	"encoding/json"
 	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
@@ -11,7 +13,8 @@ import (
 type Password struct {
 	AdminPassword        string `json:"ADMIN_PASSWORD"`
 	UserPassword         string `json:"USER_PASSWORD"`
-	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD"`
+	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD,omitempty"`
+	BrokerId             string `json:"BROKER_ID,omitempty"`
 }
 
 func (p *Password) Get(key string) string {
@@ -22,6 +25,8 @@ func (p *Password) Get(key string) string {
 		return p.UserPassword
 	case "READONLY_USER_PASSWORD":
 		return p.ReadOnlyUserPassword
+	case "BROKER_ID":
+		return p.BrokerId
 	}
 
 	return p.ReadOnlyUserPassword
@@ -37,6 +42,23 @@ func Compact(d []string) []string {
 	}
 
 	return r
+}
+
+func getPassword(secretId string, session *session.Session) (Password, error) {
+	secretsManagerClient := secretsmanager.New(session)
+	password := Password{}
+
+	gsvi := &secretsmanager.GetSecretValueInput{
+		SecretId: aws.String(secretId),
+	}
+
+	if gsvo, err := secretsManagerClient.GetSecretValue(gsvi); err != nil {
+		return password, err
+	} else if err := json.Unmarshal([]byte(*gsvo.SecretString), &password); err != nil {
+		return password, err
+	}
+
+	return password, nil
 }
 
 func getSession() *session.Session {

@@ -27,7 +27,7 @@ define terraform
 		-e AWS_SECURITY_TOKEN \
 		-e SDM_API_ACCESS_KEY=$(shell $(call secret,SDM_API_ACCESS_KEY)) \
 		-e SDM_API_SECRET_KEY=$(shell $(call secret,SDM_API_SECRET_KEY)) \
-		-w /app/tests hashicorp/terraform:0.13.5 $(1)
+		-w /app/tests hashicorp/terraform:0.14.5 $(1)
 endef
 
 define secret
