@@ -11,12 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func resourceDatabasePassword() *schema.Resource {
+func resourceMqPassword() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceDatabasePasswordCreate,
-		ReadContext:   resourceDatabasePasswordRead,
-		UpdateContext: resourceDatabasePasswordRead,
-		DeleteContext: resourceDatabasePasswordDelete,
+		CreateContext: resourceMqPasswordCreate,
+		ReadContext:   resourceMqPasswordRead,
+		UpdateContext: resourceMqPasswordRead,
+		DeleteContext: resourceMqPasswordDelete,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -33,15 +33,14 @@ func resourceDatabasePassword() *schema.Resource {
 	}
 }
 
-func resourceDatabasePasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceMqPasswordCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	secretsManager := secretsmanager.New(getSession())
 
 	secret := Password{
-		AdminPassword:        generateRandomPassword(secretsManager),
-		UserPassword:         generateRandomPassword(secretsManager),
-		ReadOnlyUserPassword: generateRandomPassword(secretsManager),
+		AdminPassword: generateRandomPassword(secretsManager),
+		UserPassword:  generateRandomPassword(secretsManager),
 	}
 
 	secretString, err := json.Marshal(secret)
@@ -68,7 +67,7 @@ func resourceDatabasePasswordCreate(ctx context.Context, d *schema.ResourceData,
 	return diags
 }
 
-func resourceDatabasePasswordRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceMqPasswordRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	d.SetId(getSecretId(d))
@@ -76,7 +75,7 @@ func resourceDatabasePasswordRead(ctx context.Context, d *schema.ResourceData, m
 	return diags
 }
 
-func resourceDatabasePasswordDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceMqPasswordDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 	return diags
 }
