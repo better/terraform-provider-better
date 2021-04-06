@@ -25,15 +25,27 @@ locals {
   username = "test"
   password = "fake_fake_fake"
 
-  engine = "postgres"
+  # DB
+  db_engine = "postgres"
 
-  engine_type        = "ActiveMQ"
-  engine_version     = "5.15.14"
-  host_instance_type = "mq.t3.micro"
-  broker_name        = "test-mq"
+  # MQ
+  mq_engine_type        = "ActiveMQ"
+  mq_engine_version     = "5.15.14"
+  mq_host_instance_type = "mq.t3.micro"
+  mq_broker_name        = "tfp-test-mq"
+
+  # Cache
+  cache_auth_token                    = "dummy_password_99999999999"
+  cache_cluster_name                  = "tfp-test-redis"
+  cache_engine_version                = "5.0.6"
+  cache_node_type                     = "cache.t2.micro"
+  cache_replication_group_description = "${local.cache_cluster_name} Redis Cache Cluster"
+  cache_subnet_group_name             = "ops-01-elasticache"
+  cache_port                          = "6379"
+  cache_security_group_ids            = ["sg-0df26abf9ad205709"]
 }
 
-# # Database
+# Database
 resource "aws_secretsmanager_secret" "db" {
   name_prefix             = local.prefix
   recovery_window_in_days = 0
@@ -47,7 +59,7 @@ resource "aws_db_instance" "db" {
   identifier_prefix = local.prefix
 
   instance_class      = "db.t3.micro"
-  engine              = local.engine
+  engine              = local.db_engine
   allocated_storage   = 5
   publicly_accessible = false
   skip_final_snapshot = true
@@ -72,7 +84,7 @@ resource "sdm_resource" "db" {
     username = local.username
     password = local.password
 
-    database = local.engine
+    database = local.db_engine
   }
 }
 
@@ -91,10 +103,10 @@ resource "aws_secretsmanager_secret" "mq" {
 
 resource "aws_mq_broker" "mq" {
 
-  broker_name = local.broker_name
+  broker_name = local.mq_broker_name
 
-  engine_type    = local.engine_type
-  engine_version = local.engine_version
+  engine_type    = local.mq_engine_type
+  engine_version = local.mq_engine_version
 
   security_groups = ["sg-1d60117b"]
 
@@ -150,4 +162,43 @@ resource "better_mq_password_association" "mq_admin" {
       console_access = false
     }
   ]
+}
+
+# ElastiCache
+resource "aws_secretsmanager_secret" "cache" {
+  name_prefix             = local.prefix
+  recovery_window_in_days = 0
+}
+
+resource "aws_elasticache_replication_group" "cache" {
+  engine                        = "redis"
+  transit_encryption_enabled    = true
+  engine_version                = local.cache_engine_version
+  node_type                     = local.cache_node_type
+  number_cache_clusters         = 1
+  replication_group_description = local.cache_replication_group_description
+  replication_group_id          = local.cache_cluster_name
+  auth_token                    = local.cache_auth_token
+  subnet_group_name             = local.cache_subnet_group_name
+  security_group_ids            = local.cache_security_group_ids
+}
+
+resource "sdm_resource" "cache" {
+  elasticache_redis {
+    name         = local.cache_cluster_name
+    hostname     = aws_elasticache_replication_group.cache.reader_endpoint_address
+    password     = local.cache_auth_token
+    port         = local.cache_port
+    tls_required = true
+  }
+}
+
+resource "better_cache_password" "cache" {
+  secret_id = aws_secretsmanager_secret.cache.id
+}
+
+resource "better_cache_password_association" "cache" {
+  secret_id            = better_cache_password.cache.secret_id
+  replication_group_id = aws_elasticache_replication_group.cache.id
+  sdm_id               = sdm_resource.cache.id
 }

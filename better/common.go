@@ -11,19 +11,22 @@ import (
 )
 
 type Password struct {
-	AdminPassword        string `json:"ADMIN_PASSWORD"`
-	UserPassword         string `json:"USER_PASSWORD"`
+	AdminPassword        string `json:"ADMIN_PASSWORD,omitempty"`
+	AuthToken            string `json:"AUTH_TOKEN,omitempty"`
 	ReadOnlyUserPassword string `json:"READONLY_USER_PASSWORD,omitempty"`
+	UserPassword         string `json:"USER_PASSWORD,omitempty"`
 }
 
 func (p *Password) Get(key string) string {
 	switch key {
 	case "ADMIN_PASSWORD":
 		return p.AdminPassword
-	case "USER_PASSWORD":
-		return p.UserPassword
+	case "AUTH_TOKEN":
+		return p.AuthToken
 	case "READONLY_USER_PASSWORD":
 		return p.ReadOnlyUserPassword
+	case "USER_PASSWORD":
+		return p.UserPassword
 	}
 
 	return p.ReadOnlyUserPassword
