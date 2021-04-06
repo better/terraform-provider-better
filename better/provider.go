@@ -11,6 +11,8 @@ func Provider() *schema.Provider {
 			"better_database_password_association": resourceDatabasePasswordAssociation(),
 			"better_mq_password":                   resourceMqPassword(),
 			"better_mq_password_association":       resourceMqPasswordAssociation(),
+			"better_cache_password":                resourceCachePassword(),
+			"better_cache_password_association":    resourceCachePasswordAssociation(),
 		},
 	}
 }
