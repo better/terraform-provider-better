@@ -45,13 +45,14 @@ func getCachePasswordId(d *schema.ResourceData) string {
 	return strings.Join(Compact(ids), "-")
 }
 
-func updateCachePassword(cacheId string, password string, strategy string, session *session.Session) (bool, error) {
+func updateCachePassword(cacheId string, password string, session *session.Session) (bool, error) {
 	cacheClient := elasticache.New(session)
+
 	_, err := cacheClient.ModifyReplicationGroup(&elasticache.ModifyReplicationGroupInput{
 		ReplicationGroupId:      aws.String(cacheId),
 		ApplyImmediately:        aws.Bool(true),
 		AuthToken:               aws.String(password),
-		AuthTokenUpdateStrategy: aws.String(strategy),
+		AuthTokenUpdateStrategy: aws.String("ROTATE"),
 	})
 
 	if err != nil {
@@ -209,10 +210,7 @@ func resourceCachePasswordAssociationCreate(ctx context.Context, d *schema.Resou
 		password := p.Get("AUTH_TOKEN")
 
 		if cacheId != "" {
-			if _, err := updateCachePassword(cacheId, password, "ROTATE", session); err != nil {
-				return diag.FromErr(err)
-			}
-			if _, err := updateCachePassword(cacheId, password, "SET", session); err != nil {
+			if _, err := updateCachePassword(cacheId, password, session); err != nil {
 				return diag.FromErr(err)
 			}
 
