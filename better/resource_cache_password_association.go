@@ -199,7 +199,7 @@ func resourceCachePasswordAssociationCreate(ctx context.Context, d *schema.Resou
 
 	secretId := getSecretId(d)
 	cacheId := d.Get("replication_group_id").(string)
-	// sdmId := d.Get("sdm_id").(string)
+	sdmId := d.Get("sdm_id").(string)
 	session := getSession()
 
 	if p, err := getPassword(secretId, session); err != nil {
@@ -216,11 +216,11 @@ func resourceCachePasswordAssociationCreate(ctx context.Context, d *schema.Resou
 				return diag.FromErr(err)
 			}
 
-			// if sdmId != "" {
-			// 	if _, err := updateSdmRedis(sdmId, password, ctx); err != nil {
-			// 		return diag.FromErr(err)
-			// 	}
-			// }
+			if sdmId != "" {
+				if _, err := updateSdmRedis(sdmId, password, ctx); err != nil {
+					return diag.FromErr(err)
+				}
+			}
 		}
 	}
 
