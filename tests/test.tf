@@ -22,17 +22,20 @@ provider "aws" {
 
 locals {
   prefix   = "tfp-better-test-"
-  username = "test"
   password = "fake_fake_fake"
 
   # DB
-  db_engine = "postgres"
+  db_engine           = "postgres"
+  db_admin_username   = "test_admin"
+  db_service_username = "test_service"
+  db_ro_username      = "test_ro"
 
   # MQ
   mq_engine_type        = "ActiveMQ"
   mq_engine_version     = "5.15.14"
   mq_host_instance_type = "mq.t3.micro"
   mq_broker_name        = "tfp-test-mq"
+  mq_username           = "test"
 
   # Cache
   cache_auth_token                    = "dummy_password_99999999999"
@@ -64,7 +67,7 @@ resource "aws_db_instance" "db" {
   publicly_accessible = false
   skip_final_snapshot = true
 
-  username = local.username
+  username = local.db_admin_username
   password = local.password
 
   apply_immediately = true
@@ -74,25 +77,65 @@ resource "aws_db_instance" "db" {
   }
 }
 
-resource "sdm_resource" "db" {
+resource "sdm_resource" "db_admin" {
   postgres {
-    name = "${local.prefix}${local.username}"
+    name = "${local.prefix}${local.db_admin_username}"
 
     hostname = aws_db_instance.db.address
     port     = aws_db_instance.db.port
 
-    username = local.username
+    username = local.db_admin_username
     password = local.password
 
     database = local.db_engine
   }
 }
 
-resource "better_database_password_association" "db" {
+resource "sdm_resource" "db_service" {
+  postgres {
+    name = "${local.prefix}${local.db_service_username}"
+
+    hostname = aws_db_instance.db.address
+    port     = aws_db_instance.db.port
+
+    username = local.db_service_username
+    password = local.password
+
+    database = local.db_engine
+  }
+}
+
+resource "sdm_resource" "db_ro" {
+  postgres {
+    name = "${local.prefix}${local.db_ro_username}"
+
+    hostname = aws_db_instance.db.address
+    port     = aws_db_instance.db.port
+
+    username = local.db_ro_username
+    password = local.password
+
+    database = local.db_engine
+  }
+}
+
+resource "better_database_password_association" "better_admin" {
   secret_id = better_database_password.db.secret_id
-  key       = "ADMIN_PASSWORD"
   db_id     = aws_db_instance.db.id
-  sdm_id    = sdm_resource.db.id
+  db_users = [
+    {
+      key    = "ADMIN_PASSWORD",
+      sdm_id = sdm_resource.db_admin.id,
+    },
+    {
+      key    = "USER_PASSWORD",
+      sdm_id = sdm_resource.db_service.id
+    },
+    {
+      key    = "READONLY_USER_PASSWORD",
+      sdm_id = sdm_resource.db_ro.id
+    }
+  ]
 }
 
 # MQ
@@ -119,7 +162,7 @@ resource "aws_mq_broker" "mq" {
   }
 
   user {
-    username       = local.username
+    username       = local.mq_username
     password       = local.password
     console_access = false
   }
@@ -157,7 +200,7 @@ resource "better_mq_password_association" "mq_admin" {
       console_access = true
     },
     {
-      user           = local.username
+      user           = local.mq_username
       key            = "USER_PASSWORD"
       console_access = false
     }
