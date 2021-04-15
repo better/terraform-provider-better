@@ -18,7 +18,6 @@ func getDatabasePasswordId(d *schema.ResourceData) string {
 	ids := []string{
 		getSecretId(d),
 		d.Get("db_id").(string),
-		d.Get("secret_id").(string),
 	}
 
 	return strings.Join(Compact(ids), "-")
