@@ -17,9 +17,8 @@ import (
 func getDatabasePasswordId(d *schema.ResourceData) string {
 	ids := []string{
 		getSecretId(d),
-		d.Get("key").(string),
 		d.Get("db_id").(string),
-		d.Get("sdm_id").(string),
+		d.Get("secret_id").(string),
 	}
 
 	return strings.Join(Compact(ids), "-")
@@ -76,23 +75,22 @@ func resourceDatabasePasswordAssociation() *schema.Resource {
 				Required:    true,
 				Description: "id of secret",
 			},
-			"key": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "READONLY_USER_PASSWORD",
-				Description: "json key for password to use",
-			},
 			"db_id": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
 				Description: "id of rds instance",
 			},
-			"sdm_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: "id of sdm resource",
+			"db_users": {
+				Type:        schema.TypeList,
+				Description: "Set of maps that define the json key for the password, and sdm resource it is associated with",
+				Required:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+					Elem: &schema.Schema{
+						Type: schema.TypeString,
+					},
+				},
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -105,25 +103,31 @@ func resourceDatabasePasswordAssociationCreate(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	secretId := getSecretId(d)
-	key := d.Get("key").(string)
 	dbId := d.Get("db_id").(string)
-	sdmId := d.Get("sdm_id").(string)
+	dbUsers := d.Get("db_users").([]interface{})
 	session := getSession()
 
 	if p, err := getPassword(secretId, session); err != nil {
 		return diag.FromErr(err)
 	} else {
-		password := p.Get(key)
 
-		if dbId != "" {
-			if _, err := updateRds(dbId, password, session); err != nil {
-				return diag.FromErr(err)
+		for _, u := range dbUsers {
+
+			dbUser := u.(map[string]interface{})
+			key := dbUser["key"].(string)
+			sdmId := dbUser["sdm_id"].(string)
+			password := p.Get(key)
+
+			if sdmId != "" {
+				if _, err := updateSdmDatabase(sdmId, password, ctx); err != nil {
+					return diag.FromErr(err)
+				}
 			}
-		}
 
-		if sdmId != "" {
-			if _, err := updateSdmDatabase(sdmId, password, ctx); err != nil {
-				return diag.FromErr(err)
+			if dbId != "" && key == "ADMIN_PASSWORD" {
+				if _, err := updateRds(dbId, password, session); err != nil {
+					return diag.FromErr(err)
+				}
 			}
 		}
 	}
